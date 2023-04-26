@@ -4,31 +4,67 @@ namespace App\Http\Controllers;
 
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
-use Kreait\Firebase\Messaging\CloudMessage;
 
 class FirebaseController extends Controller
 {
 
     public function index()
     {
-        $messaging = app('firebase.messaging');
-        $deviceToken = '36191649634f6bea969b9f8261ebc6544a40c8644731dd55da4e2fd0cb462850';
-//        $message = CloudMessage::withTarget('token', '$deviceToken')
-//            ->withData(['getLocation' => true]);
+        // Set the recipient device token
+        $deviceToken = '9c4cadf536cb82b2895a767725093642aea828fe375b4b120f1f45340cac8bbe';
+        $deviceToken = $this->ios_token($deviceToken);
 
-        $message = CloudMessage::fromArray([
+// Set the message payload
+        $message = array(
+            "title" => "Notification Title",
+            "body" => "Notification Body",
+            "sound" => "default"
+        );
+
+
+// Set the FCM API endpoint URL
+        $url = "https://fcm.googleapis.com/fcm/send";
+
+// Set the server key
+        $serverKey = env('FCM_SERVER_KEY');
+
+// Set the headers
+        $headers = array(
+            "Authorization: key=" . $serverKey,
+            "Content-Type: application/json"
+        );
+
+// Set the silent request to body
+
+        $fields = [
             'to' => $deviceToken,
-            'data' => ['getLocation' => true]
-        ]);
-        $data = $messaging->send($message);
-        dd($data);
+            "content_available" => true,
+            "apns-priority" => 5,
+            "data" => [
+                "title" => "silent"
+            ]
+        ];
+
+// Send the request
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
+        $result = curl_exec($ch);
+        curl_close($ch);
+        dd($result);
+
+
     }
 
 
     public function sendNotification(Request $request)
     {
-        $firebaseToken = '50c07242f078cc15f1f411333dbca4529631f909f612ee4fac3c4df3c8ce58e8';
+        $firebaseToken = '9c4cadf536cb82b2895a767725093642aea828fe375b4b120f1f45340cac8bbe';
         $firebaseToken = $this->ios_token($firebaseToken);
+//        dd($firebaseToken);
         $SERVER_API_KEY = env('FCM_SERVER_KEY');
 
         $data = [
@@ -52,6 +88,7 @@ class FirebaseController extends Controller
         curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
 
         $response = curl_exec($ch);
+        curl_close($ch);
         dd($response);
     }
 
@@ -66,7 +103,7 @@ class FirebaseController extends Controller
         ];
         $fields = [
             'application' => "net.altinc.tomrex",
-            'sandbox' => env("FCM_SANDBOX"),
+            'sandbox' => true,
             'apns_tokens' => array($deviceToken)
         ];
 
