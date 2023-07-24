@@ -1,0 +1,9 @@
+pipelines codes
+----------------------------
+
+  - task: PowerShell@2
+    displayName: 'Print Downloaded Files'
+    inputs:
+      targetType: 'inline'
+      script: |
+        ls -R '$(System.DefaultWorkingDirectory)/coverage'
